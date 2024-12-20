@@ -12,7 +12,7 @@ check it out live: [party-sync-watch.onrender.com](https://party-sync-watch.onre
 ![Create Room UI](screenshots/createroomui.png)
 *create a new room and become the host*
 
-![Room UI](screenshots/roomui.png)
+![Room UI](screenshots/roomui1.png)
 *watch videos together with real-time sync*
 
 ## 🚀 features
