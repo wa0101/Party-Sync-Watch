@@ -12,9 +12,12 @@ const nextConfig = {
     ),
   },
 
-  // handle both app and pages
-  experimental: {
-    appDir: true,
+  // ignore websocket warnings
+  webpack: (config) => {
+    config.ignoreWarnings = [
+      { module: /node_modules\/ws\/lib\// }
+    ]
+    return config
   }
 }
 
