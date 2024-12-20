@@ -1,0 +1,7 @@
+1|git add .
+2|git commit -m "🔧 Fix: Update server for Next.js App Router support
+3|
+4|- Add proper Next.js request handler
+5|- Configure static file serving
+6|- Support standalone output"
+7|git push origin main 

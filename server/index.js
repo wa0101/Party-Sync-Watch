@@ -52,11 +52,23 @@ app.use('/uploads', express.static('uploads'))
 
 // serve the next.js app in prod
 if (!isDev) {
-  app.use(express.static(path.join(__dirname, '../.next')))
-  app.use(express.static(path.join(__dirname, '../public')))
+  // serve static files
+  app.use('/_next', express.static(path.join(__dirname, '../.next')))
+  app.use('/static', express.static(path.join(__dirname, '../public')))
   
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../.next/server/pages/index.html'))
+  // serve the standalone next.js server
+  const next = require('next')
+  const nextApp = next({
+    dev: false,
+    dir: path.join(__dirname, '..'),
+    conf: { output: 'standalone' }
+  })
+  const handle = nextApp.getRequestHandler()
+
+  nextApp.prepare().then(() => {
+    app.all('*', (req, res) => {
+      return handle(req, res)
+    })
   })
 }
 
