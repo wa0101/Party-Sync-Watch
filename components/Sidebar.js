@@ -1,8 +1,7 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { io } from 'socket.io-client'
 import { 
   ChevronLeftIcon, 
   ChevronRightIcon,
@@ -14,14 +13,22 @@ import {
   ClipboardIcon
 } from '@heroicons/react/24/outline'
 
-export default function Sidebar({ users, currentUser, isHost, onVideoUpload, roomId, onLeave }) {
+export default function Sidebar({ 
+  users, 
+  currentUser, 
+  isHost, 
+  onVideoUpload, 
+  roomId, 
+  onLeave,
+  uploadProgress = 0,
+  uploadedSize = 0,
+  totalSize = 0,
+  isUploading = false
+}) {
   const [isOpen, setIsOpen] = useState(true)
   const [isMobile, setIsMobile] = useState(false)
   const [dragActive, setDragActive] = useState(false)
   const [showCopied, setShowCopied] = useState(false)
-  const [uploadProgress, setUploadProgress] = useState(0)
-  const [isUploading, setIsUploading] = useState(false)
-  const socketRef = useRef(null)
 
   // handle mobile stuff
   useEffect(() => {
@@ -35,37 +42,27 @@ export default function Sidebar({ users, currentUser, isHost, onVideoUpload, roo
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
 
-  // setup socket for upload progress
-  useEffect(() => {
-    if (!isHost) return
+  // format bytes to human readable
+  const formatBytes = (bytes) => {
+    if (bytes === 0) return '0 B'
+    const k = 1024
+    const sizes = ['B', 'KB', 'MB', 'GB']
+    const i = Math.floor(Math.log(bytes) / Math.log(k))
+    return `${(bytes / Math.pow(k, i)).toFixed(1)} ${sizes[i]}`
+  }
 
-    // initialize socket if not already done
-    if (!socketRef.current) {
-      const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001'
-      socketRef.current = io(socketUrl, {
-        withCredentials: false
-      })
-    }
+  // format speed to human readable
+  const formatSpeed = (bytesPerSecond) => {
+    return `${formatBytes(bytesPerSecond)}/s`
+  }
 
-    // listen for upload progress
-    socketRef.current.on('upload-progress', ({ progress }) => {
-      setUploadProgress(progress)
-      if (progress === 100) {
-        // reset after a bit
-        setTimeout(() => {
-          setIsUploading(false)
-          setUploadProgress(0)
-        }, 1000)
-      }
-    })
-
-    return () => {
-      if (socketRef.current) {
-        socketRef.current.off('upload-progress')
-        socketRef.current.disconnect()
-      }
-    }
-  }, [isHost])
+  // calculate upload speed
+  const calculateSpeed = () => {
+    if (!uploadedSize || !totalSize) return 0
+    const progress = uploadProgress / 100
+    const estimatedBytesPerSecond = (uploadedSize / progress) / (uploadProgress ? uploadProgress : 1)
+    return estimatedBytesPerSecond
+  }
 
   // copy room code to clipboard
   const copyRoomCode = () => {
@@ -74,27 +71,10 @@ export default function Sidebar({ users, currentUser, isHost, onVideoUpload, roo
     setTimeout(() => setShowCopied(false), 2000)
   }
 
-  // handle file upload with progress
+  // handle file upload
   const handleUpload = async (file) => {
     if (!isHost || !file || !file.type.startsWith('video/')) return
-    
-    setIsUploading(true)
-    setUploadProgress(0)
-
-    try {
-      // pass the file to parent for handling
-      await onVideoUpload(file)
-      
-      // reset after a bit
-      setTimeout(() => {
-        setIsUploading(false)
-        setUploadProgress(0)
-      }, 1000)
-    } catch (error) {
-      console.error('Upload error:', error)
-      setIsUploading(false)
-      setUploadProgress(0)
-    }
+    await onVideoUpload(file)
   }
 
   // drag n drop magic
@@ -270,6 +250,10 @@ export default function Sidebar({ users, currentUser, isHost, onVideoUpload, roo
                             animate={{ width: `${uploadProgress}%` }}
                             transition={{ duration: 0.2 }}
                           />
+                        </div>
+                        <div className="flex justify-between text-xs text-gray-400">
+                          <span>{formatBytes(uploadedSize)} / {formatBytes(totalSize)}</span>
+                          <span>{formatSpeed(calculateSpeed())}</span>
                         </div>
                       </div>
                     ) : (

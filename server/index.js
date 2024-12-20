@@ -229,20 +229,24 @@ app.post('/upload', (req, res) => {
   }
   
   // setup progress tracking
-  let progress = 0
-  const fileSize = parseInt(req.headers['content-length'])
-  if (!fileSize) {
+  let uploaded = 0
+  const total = parseInt(req.headers['content-length'])
+  if (!total) {
     return res.status(400).json({ error: 'Content-Length header is required' })
   }
   
   req.on('data', (chunk) => {
-    progress += chunk.length
-    const percent = Math.round((progress / fileSize) * 100)
+    uploaded += chunk.length
+    const progress = Math.round((uploaded / total) * 100)
     
     // only emit if we have a socket id and progress changed
-    if (socketId && uploadProgress.get(socketId) !== percent) {
-      uploadProgress.set(socketId, percent)
-      io.to(socketId).emit('upload-progress', { progress: percent })
+    if (socketId && uploadProgress.get(socketId) !== progress) {
+      uploadProgress.set(socketId, progress)
+      io.to(socketId).emit('upload-progress', { 
+        progress,
+        uploaded,
+        total
+      })
     }
   })
 

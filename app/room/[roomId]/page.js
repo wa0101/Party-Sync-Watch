@@ -44,6 +44,12 @@ export default function RoomPage({ params }) {
   const [currentTime, setCurrentTime] = useState(0)
   const [error, setError] = useState('')
   const socketRef = useRef(null)
+  const [uploadProgress, setUploadProgress] = useState(0)
+  const [uploadedSize, setUploadedSize] = useState(0)
+  const [totalSize, setTotalSize] = useState(0)
+  const [isUploading, setIsUploading] = useState(false)
+  const lastProgressTime = useRef(Date.now())
+  const lastUploadedSize = useRef(0)
 
   useEffect(() => {
     if (!username) {
@@ -120,7 +126,24 @@ export default function RoomPage({ params }) {
     const formData = new FormData()
     formData.append('video', file)
     
+    setIsUploading(true)
+    setUploadProgress(0)
+    setUploadedSize(0)
+    setTotalSize(file.size)
+    lastProgressTime.current = Date.now()
+    lastUploadedSize.current = 0
+
     try {
+      // setup progress tracking
+      socketRef.current.emit('start-upload')
+
+      // listen for progress updates
+      socketRef.current.on('upload-progress', ({ progress, uploaded, total }) => {
+        setUploadProgress(progress)
+        setUploadedSize(uploaded)
+        setTotalSize(total)
+      })
+
       const response = await fetch(`${SOCKET_URL}/upload`, {
         method: 'POST',
         body: formData,
@@ -137,9 +160,23 @@ export default function RoomPage({ params }) {
       const { url } = await response.json()
       setVideoUrl(url)
       socketRef.current.emit('video-uploaded', { roomId, url })
+
+      // cleanup
+      socketRef.current.off('upload-progress')
+      setTimeout(() => {
+        setIsUploading(false)
+        setUploadProgress(0)
+        setUploadedSize(0)
+        setTotalSize(0)
+      }, 1000)
     } catch (error) {
       console.error('Upload error:', error)
       setError(error.message)
+      setIsUploading(false)
+      setUploadProgress(0)
+      setUploadedSize(0)
+      setTotalSize(0)
+      socketRef.current.off('upload-progress')
     }
   }
 
@@ -174,6 +211,10 @@ export default function RoomPage({ params }) {
           onVideoUpload={handleVideoUpload}
           roomId={roomId}
           onLeave={handleLeaveRoom}
+          uploadProgress={uploadProgress}
+          uploadedSize={uploadedSize}
+          totalSize={totalSize}
+          isUploading={isUploading}
         />
         
         <main className="flex-1 p-4 sm:p-8">
