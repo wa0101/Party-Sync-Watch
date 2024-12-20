@@ -58,13 +58,10 @@ if (!fs.existsSync('uploads')) {
 
 app.use('/uploads', express.static('uploads'))
 
-// serve the next.js app in prod
 if (!isDev) {
-  // serve static files
   app.use('/_next', express.static(path.join(__dirname, '../.next')))
   app.use('/static', express.static(path.join(__dirname, '../public')))
   
-  // serve the standalone next.js server
   const next = require('next')
   const nextApp = next({
     dev: false,
@@ -80,15 +77,12 @@ if (!isDev) {
   })
 }
 
-// where we keep all the room data
 const rooms = new Map()
 
-// check if room has someone in charge
 const roomHasHost = (room) => {
   return room && room.users.some(user => user.isHost)
 }
 
-// cleanup empty rooms or rooms without host
 const cleanupRoom = (roomId) => {
   const room = rooms.get(roomId)
   if (!room) return
@@ -105,12 +99,10 @@ io.on('connection', (socket) => {
   let currentRoom = null
   let currentUser = null
 
-  // store socket id for upload progress
   socket.on('start-upload', () => {
     uploadProgress.set(socket.id, 0)
   })
 
-  // make sure room exists and has a host
   socket.on('check-room', ({ roomId }, callback) => {
     const room = rooms.get(roomId)
     callback({
@@ -122,25 +114,21 @@ io.on('connection', (socket) => {
   socket.on('join-room', ({ roomId, username, isHost }, callback) => {
     const room = rooms.get(roomId)
     
-    // cant join if room doesnt exist and ur not the host
     if (!room && !isHost) {
       callback({ error: 'Room does not exist' })
       return
     }
 
-    // need a host to join as participant
     if (room && !roomHasHost(room) && !isHost) {
       callback({ error: 'Cannot join room without a host' })
       return
     }
 
-    // room can only have one host
     if (room && isHost && roomHasHost(room)) {
       callback({ error: 'Room already has a host' })
       return
     }
 
-    // no duplicate usernames pls
     if (room && room.users.some(user => user.username === username)) {
       callback({ error: 'Username is already taken in this room' })
       return
@@ -178,7 +166,6 @@ io.on('connection', (socket) => {
     callback({ success: true })
   })
 
-  // cleanup when someone leaves
   socket.on('disconnect', () => {
     // cleanup upload progress
     uploadProgress.delete(socket.id)
@@ -220,15 +207,12 @@ io.on('connection', (socket) => {
   })
 })
 
-// handle video uploads with progress
 app.post('/upload', (req, res) => {
-  // get socket id from headers
   const socketId = req.headers['x-socket-id']
   if (!socketId) {
     return res.status(400).json({ error: 'Socket ID is required' })
   }
   
-  // setup progress tracking
   let uploaded = 0
   const total = parseInt(req.headers['content-length'])
   if (!total) {
@@ -250,7 +234,6 @@ app.post('/upload', (req, res) => {
     }
   })
 
-  // handle the actual upload
   upload.single('video')(req, res, (err) => {
     if (err) {
       console.error('Upload error:', err)
