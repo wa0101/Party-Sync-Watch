@@ -74,8 +74,6 @@ feel free to contribute! the code is a bit messy but we're working on it
 - the code needs some serious cleanup
 - probably more that i haven't found yet 💀
 
-## 📜 license
-MIT (do whatever u want just dont sue me lol)
 
 ---
 made with ❤️
