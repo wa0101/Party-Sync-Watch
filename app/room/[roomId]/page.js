@@ -12,6 +12,8 @@ const SOCKET_URL = process.env.NODE_ENV === 'production'
   ? process.env.NEXT_PUBLIC_SOCKET_URL || window.location.origin
   : 'http://localhost:3001'
 
+
+  // need to fix this on android :C
 function Toast({ message, onClose }) {
   return (
     <motion.div
