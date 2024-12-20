@@ -2,6 +2,19 @@
 
 watch videos together with ur friends in perfect sync! built with next.js, express and socket.io
 
+## 🚀 demo
+check it out live: [party-sync-watch.onrender.com](https://party-sync-watch.onrender.com/)
+
+## 📸 screenshots
+![Main UI](screenshots/mainui.png)
+*home page with join/create options*
+
+![Create Room UI](screenshots/createroomui.png)
+*create a new room and become the host*
+
+![Room UI](screenshots/roomui.png)
+*watch videos together with real-time sync*
+
 ## 🚀 features
 - create rooms and invite friends (just share the room code lol)
 - upload videos and watch em together
