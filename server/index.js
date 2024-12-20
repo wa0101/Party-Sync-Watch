@@ -19,9 +19,17 @@ const io = new Server(server, {
   }
 })
 
-app.use(cors())
+// setup CORS for express
+app.use(cors({
+  origin: isDev ? FRONTEND_URL : [FRONTEND_URL, /\.render\.com$/],
+  methods: ['GET', 'POST'],
+  allowedHeaders: ['Content-Type', 'X-Socket-ID']
+}))
 
-// setup multer for video uploads
+// track upload progress for each socket
+const uploadProgress = new Map()
+
+// setup multer for video uploads with progress tracking
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, 'uploads/')
@@ -97,6 +105,11 @@ io.on('connection', (socket) => {
   let currentRoom = null
   let currentUser = null
 
+  // store socket id for upload progress
+  socket.on('start-upload', () => {
+    uploadProgress.set(socket.id, 0)
+  })
+
   // make sure room exists and has a host
   socket.on('check-room', ({ roomId }, callback) => {
     const room = rooms.get(roomId)
@@ -167,6 +180,9 @@ io.on('connection', (socket) => {
 
   // cleanup when someone leaves
   socket.on('disconnect', () => {
+    // cleanup upload progress
+    uploadProgress.delete(socket.id)
+
     if (currentRoom && currentUser) {
       const room = rooms.get(currentRoom)
       if (room) {
@@ -204,14 +220,46 @@ io.on('connection', (socket) => {
   })
 })
 
-// handle video uploads
-app.post('/upload', upload.single('video'), (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ error: 'No video file uploaded' })
+// handle video uploads with progress
+app.post('/upload', (req, res) => {
+  // get socket id from headers
+  const socketId = req.headers['x-socket-id']
+  if (!socketId) {
+    return res.status(400).json({ error: 'Socket ID is required' })
   }
+  
+  // setup progress tracking
+  let progress = 0
+  const fileSize = parseInt(req.headers['content-length'])
+  if (!fileSize) {
+    return res.status(400).json({ error: 'Content-Length header is required' })
+  }
+  
+  req.on('data', (chunk) => {
+    progress += chunk.length
+    const percent = Math.round((progress / fileSize) * 100)
+    
+    // only emit if we have a socket id and progress changed
+    if (socketId && uploadProgress.get(socketId) !== percent) {
+      uploadProgress.set(socketId, percent)
+      io.to(socketId).emit('upload-progress', { progress: percent })
+    }
+  })
 
-  const url = `${isDev ? 'http://localhost:' + PORT : FRONTEND_URL}/uploads/${req.file.filename}`
-  res.json({ url })
+  // handle the actual upload
+  upload.single('video')(req, res, (err) => {
+    if (err) {
+      console.error('Upload error:', err)
+      return res.status(400).json({ error: err.message })
+    }
+    if (!req.file) {
+      return res.status(400).json({ error: 'No video file uploaded' })
+    }
+
+    const url = `${isDev ? 'http://localhost:' + PORT : FRONTEND_URL}/uploads/${req.file.filename}`
+    console.log('Upload successful:', url)
+    res.json({ url })
+  })
 })
 
 server.listen(PORT, () => {

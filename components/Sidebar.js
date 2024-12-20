@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { io } from 'socket.io-client'
 import { 
   ChevronLeftIcon, 
   ChevronRightIcon,
@@ -18,6 +19,9 @@ export default function Sidebar({ users, currentUser, isHost, onVideoUpload, roo
   const [isMobile, setIsMobile] = useState(false)
   const [dragActive, setDragActive] = useState(false)
   const [showCopied, setShowCopied] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState(0)
+  const [isUploading, setIsUploading] = useState(false)
+  const socketRef = useRef(null)
 
   // handle mobile stuff
   useEffect(() => {
@@ -31,11 +35,66 @@ export default function Sidebar({ users, currentUser, isHost, onVideoUpload, roo
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
 
+  // setup socket for upload progress
+  useEffect(() => {
+    if (!isHost) return
+
+    // initialize socket if not already done
+    if (!socketRef.current) {
+      const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001'
+      socketRef.current = io(socketUrl, {
+        withCredentials: false
+      })
+    }
+
+    // listen for upload progress
+    socketRef.current.on('upload-progress', ({ progress }) => {
+      setUploadProgress(progress)
+      if (progress === 100) {
+        // reset after a bit
+        setTimeout(() => {
+          setIsUploading(false)
+          setUploadProgress(0)
+        }, 1000)
+      }
+    })
+
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.off('upload-progress')
+        socketRef.current.disconnect()
+      }
+    }
+  }, [isHost])
+
   // copy room code to clipboard
   const copyRoomCode = () => {
     navigator.clipboard.writeText(roomId)
     setShowCopied(true)
     setTimeout(() => setShowCopied(false), 2000)
+  }
+
+  // handle file upload with progress
+  const handleUpload = async (file) => {
+    if (!isHost || !file || !file.type.startsWith('video/')) return
+    
+    setIsUploading(true)
+    setUploadProgress(0)
+
+    try {
+      // pass the file to parent for handling
+      await onVideoUpload(file)
+      
+      // reset after a bit
+      setTimeout(() => {
+        setIsUploading(false)
+        setUploadProgress(0)
+      }, 1000)
+    } catch (error) {
+      console.error('Upload error:', error)
+      setIsUploading(false)
+      setUploadProgress(0)
+    }
   }
 
   // drag n drop magic
@@ -47,7 +106,7 @@ export default function Sidebar({ users, currentUser, isHost, onVideoUpload, roo
     
     const file = e.dataTransfer.files[0]
     if (file && file.type.startsWith('video/')) {
-      onVideoUpload(file)
+      handleUpload(file)
     }
   }
 
@@ -63,7 +122,7 @@ export default function Sidebar({ users, currentUser, isHost, onVideoUpload, roo
   const handleFileSelect = (e) => {
     const file = e.target.files[0]
     if (file && file.type.startsWith('video/')) {
-      onVideoUpload(file)
+      handleUpload(file)
     }
   }
 
@@ -198,19 +257,39 @@ export default function Sidebar({ users, currentUser, isHost, onVideoUpload, roo
               >
                 <label className="block">
                   <div className="flex flex-col items-center gap-3 p-4 border-2 border-dashed border-white/20 rounded-xl hover:border-accent/50 transition-colors cursor-pointer">
-                    <div className="p-3 rounded-full bg-accent/20">
-                      <ArrowUpTrayIcon className="w-6 h-6 text-accent" />
-                    </div>
-                    <div className="text-center">
-                      <span className="text-sm text-gray-400">Drop video or</span>
-                      <span className="text-accent"> browse</span>
-                    </div>
+                    {isUploading ? (
+                      <div className="w-full space-y-2">
+                        <div className="flex items-center justify-between text-sm text-gray-400">
+                          <span>Uploading video...</span>
+                          <span>{uploadProgress}%</span>
+                        </div>
+                        <div className="w-full h-1 bg-white/20 rounded-full overflow-hidden">
+                          <motion.div 
+                            className="h-full bg-accent"
+                            initial={{ width: 0 }}
+                            animate={{ width: `${uploadProgress}%` }}
+                            transition={{ duration: 0.2 }}
+                          />
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="p-3 rounded-full bg-accent/20">
+                          <ArrowUpTrayIcon className="w-6 h-6 text-accent" />
+                        </div>
+                        <div className="text-center">
+                          <span className="text-sm text-gray-400">Drop video or</span>
+                          <span className="text-accent"> browse</span>
+                        </div>
+                      </>
+                    )}
                   </div>
                   <input
                     type="file"
                     accept="video/*"
                     onChange={handleFileSelect}
                     className="hidden"
+                    disabled={isUploading}
                   />
                 </label>
               </div>

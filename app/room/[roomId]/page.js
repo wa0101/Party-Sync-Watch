@@ -115,20 +115,32 @@ export default function RoomPage({ params }) {
 
   // upload video if ur the host
   const handleVideoUpload = async (file) => {
-    if (!isHost) return
+    if (!isHost || !socketRef.current) return
     
     const formData = new FormData()
     formData.append('video', file)
-    formData.append('roomId', roomId)
     
-    const response = await fetch(`${SOCKET_URL}/upload`, {
-      method: 'POST',
-      body: formData
-    })
-    
-    const { url } = await response.json()
-    setVideoUrl(url)
-    socketRef.current.emit('video-uploaded', { roomId, url })
+    try {
+      const response = await fetch(`${SOCKET_URL}/upload`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'X-Socket-ID': socketRef.current.id
+        }
+      })
+      
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Upload failed')
+      }
+
+      const { url } = await response.json()
+      setVideoUrl(url)
+      socketRef.current.emit('video-uploaded', { roomId, url })
+    } catch (error) {
+      console.error('Upload error:', error)
+      setError(error.message)
+    }
   }
 
   // sync video state with everyone
