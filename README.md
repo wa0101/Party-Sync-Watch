@@ -110,6 +110,13 @@ feel free to contribute! the code is a bit messy but we're working on it
 - mobile fullscreen is janky on some browsers
 - the code needs some serious cleanup
 - uploads are slow and limited by render.com storage
+- random websocket disconnects on mobile (working on a fix)
+- player issues:
+  - time sync sometimes breaks for no reason
+  - mobile users get disconnected more often
+  - seeking/skipping can break the sync
+  - play/pause icons sometimes show wrong state
+  - control buttons might get stuck visually
 - probably more that i haven't found yet 💀
 
 
