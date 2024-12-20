@@ -10,20 +10,18 @@
   },
   "dependencies": {
     "@heroicons/react": "^2.0.18",
+    "autoprefixer": "^10.4.16",
     "concurrently": "^8.2.2",
     "cors": "^2.8.5",
     "express": "^4.18.2",
     "framer-motion": "^10.16.4",
     "multer": "^1.4.5-lts.1",
     "next": "14.0.3",
+    "postcss": "^8.4.31",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "socket.io": "^4.7.2",
-    "socket.io-client": "^4.7.2"
-  },
-  "devDependencies": {
-    "autoprefixer": "^10.4.16",
-    "postcss": "^8.4.31",
+    "socket.io-client": "^4.7.2",
     "tailwindcss": "^3.3.5"
   },
   "engines": {
