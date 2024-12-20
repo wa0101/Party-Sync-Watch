@@ -10,7 +10,8 @@ watch videos together with ur friends in perfect sync! built with next.js, expre
 - host controls with fancy progress bar
 - volume control for everyone
 - fullscreen support for mobile/desktop
-- upload progress tracking
+- upload progress tracking with speed and size info
+  > note: when uploading, it might take a few minutes (based on the size of the video) to start showing progress (be patient)
 - drag n drop video uploads
 
 ## 🛠️ tech stack
