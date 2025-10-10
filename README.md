@@ -16,10 +16,10 @@ check it out live: [party-sync-watch.onrender.com](https://party-sync-watch.onre
 *watch videos together with real-time sync*
 
 ## 🚀 features
-- create rooms and invite friends (just share the room code lol)
+- create rooms and invite friends
 - upload videos and watch em together
-- everything syncs perfectly (most of the time :d)
-- modern ui with tailwind (tried my best ok)
+- everything syncs perfectly
+- modern ui with tailwind
 - host controls with fancy progress bar
 - volume control for everyone
 - fullscreen support for mobile/desktop
@@ -28,11 +28,11 @@ check it out live: [party-sync-watch.onrender.com](https://party-sync-watch.onre
 - drag n drop video uploads
 
 ## 🛠️ tech stack
-- next.js 13 (app router btw)
-- tailwind css (saved my life)
-- express (for the backend stuff)
-- socket.io (real-time magic ✨)
-- framer motion (smooth af animations)
+- next.js 13
+- tailwind css
+- express
+- socket.io
+- framer motion
 
 ## 💻 getting started
 
@@ -56,7 +56,7 @@ run this in dev mode:
 npm run dev
 ```
 
-now open [http://localhost:3000](http://localhost:3000) and pray it works 🙏
+now open [http://localhost:3000](http://localhost:3000)
 
 ## 🚀 deployment on render.com
 
@@ -93,32 +93,12 @@ now open [http://localhost:3000](http://localhost:3000) and pray it works 🙏
   - no storage limits to worry about
   - better cdn for faster video loading
   - maybe add resumable uploads
-- [ ] add chat system (cuz why not)
-- [ ] youtube url support
-- [ ] better mobile ui (its kinda wonky rn)
-- [ ] user profiles with avatars (gotta look fancy)
-- [ ] room passwords (for the secret watch parties)
-- [ ] multiple hosts
-- [ ] screen sharing (if i figure it out)
-- [ ] better error handling (its a mess rn ngl)
+- [ ] add chat system
 
-## 🧑‍💻 contributing
-feel free to contribute! the code is a bit messy but we're working on it
 
 ## ⚠️ known issues
 - sometimes the sync gets weird
-- mobile fullscreen is janky on some browsers
-- the code needs some serious cleanup
-- uploads are slow and limited by render.com storage
-- random websocket disconnects on mobile (working on a fix)
-- player issues:
-  - time sync sometimes breaks for no reason
-  - mobile users get disconnected more often
-  - seeking/skipping can break the sync
-  - play/pause icons sometimes show wrong state
-  - control buttons might get stuck visually
-- probably more that i haven't found yet 💀
+
 
 
 ---
-made with ❤️
